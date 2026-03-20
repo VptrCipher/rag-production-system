@@ -23,7 +23,7 @@ services:
   rag-api:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: rag-api
     ports:
       - "8000:8000"
