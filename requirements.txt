@@ -4,7 +4,9 @@ llama-index-core
 llama-index-readers-file
 llama-index-embeddings-openai
 llama-index-llms-openai
+llama-index-llms-groq
 llama-index-vector-stores-qdrant
+llama-index-embeddings-huggingface
 
 # Vector Database
 qdrant-client==1.12.1
