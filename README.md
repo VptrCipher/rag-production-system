@@ -41,6 +41,24 @@ graph TD
     D --> E
 ```
 
+## 🚀 Deployment
+
+### Cloud Demo (Recommended: Hugging Face Spaces)
+Because the system requires a Python backend and a database, **GitHub Pages (static only) is not supported**. 
+
+To host a live "working model" for an interviewer:
+1.  Go to [Hugging Face New Space](https://huggingface.co/new-space).
+2.  Select **Docker** as the SDK.
+3.  Choose **Blank** (or connect your GitHub repo `VptrCipher/rag-production-system`).
+4.  **Important**: Add your Secrets in **Settings → Variables and Secrets** (e.g., `OPENAI_API_KEY`, `GROQ_API_KEY`).
+5.  The Space will automatically build from the `Dockerfile` and listen on port `7860`.
+
+### Local Deployment
+```bash
+docker-compose --file docker/docker-compose.yml up --build
+```
+Access the UI at `http://localhost:9999`.
+
 ## 🚀 Quick Start
 
 ### 1. Environment Setup
