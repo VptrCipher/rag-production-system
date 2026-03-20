@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RAG Dashboard - Production Grade</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3713ec",
+                        "emerald-accent": "#10b981",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0a0914",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass {
+            background: rgba(30, 25, 51, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-indigo {
+            box-shadow: 0 0 15px rgba(55, 19, 236, 0.3);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(55, 19, 236, 0.4);
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
+<div class="relative flex min-h-screen flex-col">
+<header class="sticky top-0 z-50 glass border-b border-primary/20 px-4 py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<button class="text-slate-100 p-1">
+<span class="material-symbols-outlined text-2xl">menu</span>
+</button>
+<div>
+<div class="flex items-center gap-2">
+<h1 class="text-sm font-bold tracking-tight">Llama 3.3 70B</h1>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-accent/10 border border-emerald-accent/20">
+<span class="size-2 rounded-full bg-emerald-accent pulse"></span>
+<span class="text-[10px] font-bold text-emerald-accent uppercase tracking-wider">Online</span>
+</div>
+</div>
+<p class="text-[10px] text-slate-400 font-mono">cluster-rag-01.prod</p>
+</div>
+</div>
+<a class="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20" href="#">
+<span class="material-symbols-outlined text-sm">analytics</span>
+                Phoenix Trace
+            </a>
+</header>
+<main class="flex-1 flex flex-col gap-4 p-4 pb-24">
+<div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+<div class="flex-none w-40 glass rounded-xl p-3 border-l-2 border-l-primary">
+<p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">Qdrant Health</p>
+<div class="flex items-baseline gap-2">
+<span class="text-lg font-bold">Optimal</span>
+<span class="text-[10px] text-emerald-accent">99.9%</span>
+</div>
+</div>
+<div class="flex-none w-40 glass rounded-xl p-3 border-l-2 border-l-emerald-accent">
+<p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">Vector Index</p>
+<div class="flex items-baseline gap-2">
+<span class="text-lg font-bold">12.4k</span>
+<span class="text-[10px] text-emerald-accent">+150</span>
+</div>
+</div>
+<div class="flex-none w-40 glass rounded-xl p-3 border-l-2 border-l-purple-500">
+<p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">Latency</p>
+<div class="flex items-baseline gap-2">
+<span class="text-lg font-bold">142ms</span>
+<span class="text-[10px] text-slate-400">avg</span>
+</div>
+</div>
+</div>
+<div class="glass rounded-xl p-1 flex mb-2">
+<button class="flex-1 py-2 text-xs font-bold rounded-lg bg-primary text-white shadow-lg">Standard RAG</button>
+<button class="flex-1 py-2 text-xs font-bold text-slate-400">Agentic Multi-hop</button>
+</div>
+<div class="space-y-6">
+<div class="flex items-start gap-3">
+<div class="size-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+<div class="bg-slate-800/50 rounded-2xl rounded-tl-none px-4 py-3 text-sm border border-slate-700/50 max-w-[85%]">
+                        Explain the architecture of the current hybrid search retrieval system.
+                    </div>
+</div>
+<div class="flex items-start gap-3">
+<div class="size-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center shrink-0 glow-indigo">
+<span class="material-symbols-outlined text-primary text-sm">bolt</span>
+</div>
+<div class="flex flex-col gap-3 max-w-[90%]">
+<div class="glass rounded-2xl rounded-tl-none px-4 py-4 text-sm leading-relaxed">
+<p class="mb-3">The system implements a <span class="text-primary font-semibold">Two-Stage Hybrid Retrieval</span> pipeline:</p>
+<ol class="list-decimal list-inside space-y-2 text-slate-300">
+<li><span class="text-white font-medium">Stage 1:</span> Parallel Sparse (BM25) and Dense (Cosine) retrieval.</li>
+<li><span class="text-white font-medium">Stage 2:</span> Reciprocal Rank Fusion (RRF) followed by a Cross-Encoder reranker.</li>
+</ol>
+<div class="mt-4 p-3 bg-black/40 rounded-lg border border-white/5 font-mono text-[11px] overflow-x-auto">
+<pre class="text-emerald-400">def <span class="text-purple-400">retrieve_hybrid</span>(query):
+    dense = qdrant.search(query_vector)
+    sparse = bm25.search(query_text)
+    return <span class="text-primary">rerank</span>(dense, sparse)</pre>
+</div>
+<div class="mt-4 flex flex-wrap gap-2">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-[10px] font-bold text-primary tracking-wide uppercase">
+<span class="material-symbols-outlined text-xs">visibility</span> Trace Viewer
+                                </button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-700/40 border border-slate-600/50 text-[10px] font-bold text-slate-300 tracking-wide uppercase">
+<span class="material-symbols-outlined text-xs">schema</span> Pipeline
+                                </button>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Sources</p>
+<div class="grid grid-cols-2 gap-2">
+<div class="glass p-2 rounded-lg border-l-2 border-l-emerald-accent">
+<p class="text-[10px] font-bold truncate">Architecture_V2.pdf</p>
+<p class="text-[9px] text-slate-500">Chunk 42 • Score: 0.98</p>
+</div>
+<div class="glass p-2 rounded-lg border-l-2 border-l-emerald-accent">
+<p class="text-[10px] font-bold truncate">Hybrid_Search_Docs.md</p>
+<p class="text-[9px] text-slate-500">Chunk 12 • Score: 0.94</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="border-t border-primary/10 pt-4">
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Top Retrieved Chunks</h3>
+<span class="text-[10px] text-primary font-mono">reranker_top_k: 5</span>
+</div>
+<div class="space-y-2">
+<div class="glass rounded-xl p-3">
+<div class="flex justify-between items-center mb-2">
+<span class="text-[10px] font-mono text-emerald-accent">#1 Relevance: 0.98</span>
+<span class="material-symbols-outlined text-xs text-slate-500">open_in_new</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-2">
+<div class="h-full bg-emerald-accent glow-emerald w-[98%]"></div>
+</div>
+<p class="text-xs text-slate-400 line-clamp-2">The dense vector representation uses BGE-M3 for multilingual support, ensuring semantics are preserved across different domain vocabularies...</p>
+</div>
+<div class="glass rounded-xl p-3">
+<div class="flex justify-between items-center mb-2">
+<span class="text-[10px] font-mono text-emerald-accent">#2 Relevance: 0.85</span>
+<span class="material-symbols-outlined text-xs text-slate-500">open_in_new</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-2">
+<div class="h-full bg-emerald-accent glow-emerald w-[85%] opacity-70"></div>
+</div>
+<p class="text-xs text-slate-400 line-clamp-2">BM25 weighting is applied to the tokenized search terms to prioritize rare keywords that might be lost in global vector embeddings...</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="fixed bottom-0 left-0 right-0 p-4 glass border-t border-primary/20 z-50">
+<div class="relative flex items-center gap-2">
+<button class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-800 border border-slate-700">
+<span class="material-symbols-outlined text-slate-400">attach_file</span>
+</button>
+<div class="relative flex-1">
+<input class="w-full bg-slate-900/50 border border-primary/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-slate-100 placeholder:text-slate-500" placeholder="Ask about your data..." type="text"/>
+</div>
+<button class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg glow-indigo">
+<span class="material-symbols-outlined text-white">send</span>
+</button>
+</div>
+</footer>
+<div class="hidden fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+<div class="glass w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border-primary/30">
+<div class="p-6">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-lg font-bold">Inference Pipeline</h2>
+<button class="material-symbols-outlined text-slate-400">close</button>
+</div>
+<div class="space-y-4 relative">
+<div class="absolute left-4 top-4 bottom-4 w-0.5 bg-gradient-to-b from-primary via-emerald-accent to-purple-500"></div>
+<div class="relative pl-10 flex items-center gap-3">
+<div class="absolute left-2.5 size-3 rounded-full bg-primary border-2 border-white shadow-[0_0_8px_rgba(55,19,236,0.8)]"></div>
+<div class="flex-1 glass p-3 rounded-xl border-primary/20">
+<p class="text-xs font-bold text-primary uppercase tracking-tighter">1. Retrieval</p>
+<p class="text-[10px] text-slate-400">Hybrid Search (Qdrant)</p>
+</div>
+</div>
+<div class="relative pl-10 flex items-center gap-3">
+<div class="absolute left-2.5 size-3 rounded-full bg-emerald-accent border-2 border-white shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+<div class="flex-1 glass p-3 rounded-xl border-emerald-accent/20">
+<p class="text-xs font-bold text-emerald-accent uppercase tracking-tighter">2. Rerank</p>
+<p class="text-[10px] text-slate-400">Cross-Encoder (BGE-Reranker)</p>
+</div>
+</div>
+<div class="relative pl-10 flex items-center gap-3">
+<div class="absolute left-2.5 size-3 rounded-full bg-purple-500 border-2 border-white shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+<div class="flex-1 glass p-3 rounded-xl border-purple-500/20">
+<p class="text-xs font-bold text-purple-400 uppercase tracking-tighter">3. Generate</p>
+<p class="text-[10px] text-slate-400">Llama-3-70b-Instruct</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 bg-primary rounded-xl font-bold text-sm shadow-xl glow-indigo">Close Visualization</button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,58 @@
+# Core RAG Framework
+llama-index
+llama-index-core
+llama-index-readers-file
+llama-index-embeddings-openai
+llama-index-llms-openai
+llama-index-vector-stores-qdrant
+
+# Vector Database
+qdrant-client==1.12.1
+
+# BM25 Retrieval
+rank-bm25==0.2.2
+
+# Reranking
+cohere==5.13.0
+
+# Evaluation
+ragas==0.2.8
+datasets==3.2.0
+
+# API
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# Configuration
+pydantic-settings==2.7.1
+python-dotenv==1.0.1
+
+# Document Processing
+pypdf==5.1.0
+beautifulsoup4==4.12.3
+markdown==3.7
+unstructured==0.16.14
+
+# Utilities
+numpy==1.26.4
+tiktoken==0.8.0
+tenacity==9.0.0
+structlog==24.4.0
+prometheus-client==0.21.1
+
+# OpenAI
+openai==1.59.3
+groq
+
+# Local Embeddings
+sentence-transformers>=2.7.0
+
+# Firebase
+firebase-admin
+
+# Observability
+arize-phoenix
+openinference-instrumentation-llama-index
+opentelemetry-sdk
+opentelemetry-exporter-otlp

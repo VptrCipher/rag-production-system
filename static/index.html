@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>RAG Dashboard · Production Grade</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3713ec",
+                        "emerald-accent": "#10b981",
+                        "background-dark": "#0a0914",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(15, 12, 30, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-indigo { box-shadow: 0 0 20px rgba(55, 19, 236, 0.2); }
+        .glow-emerald { box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+        .pulse { animation: pulse-animation 2s infinite; }
+        @keyframes pulse-animation {
+            0% { opacity: 0.4; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.4; transform: scale(0.9); }
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(55, 19, 236, 0.3); border-radius: 10px; }
+        .md-body h1, .md-body h2 { font-weight: 700; color: #fff; margin: 1rem 0 0.5rem; }
+        .md-body p { margin-bottom: 1.25rem; }
+        .md-body ul, .md-body ol { padding-left: 1.5rem; margin-bottom: 1.25rem; list-style-type: disc; }
+        .md-body li { margin-bottom: 0.5rem; }
+        .md-body table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.8rem; background: rgba(255, 255, 255, 0.03); border-radius: 8px; overflow: hidden; }
+        .md-body th { background: rgba(55, 19, 236, 0.2); text-align: left; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.1); color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em; }
+        .md-body td { padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .md-body tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+        .md-body blockquote { border-left: 4px solid #3713ec; padding-left: 1rem; color: #94a3b8; font-style: italic; margin-bottom: 1.25rem; }
+        .md-body code { background: rgba(55, 19, 236, 0.15); padding: 0.1rem 0.3rem; border-radius: 4px; font-family: monospace; color: #a5b4fc; }
+        .md-body pre { background: rgba(0, 0, 0, 0.3); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1.25rem 0; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .md-body pre code { background: transparent; padding: 0; color: #ddd; }
+    </style>
+</head>
+<body class="bg-background-dark font-display text-slate-100 antialiased overflow-hidden h-screen flex flex-col">
+
+<div class="flex h-full">
+    <!-- SIDEBAR -->
+    <aside class="w-72 glass border-r border-white/5 flex flex-col shrink-0 hidden md:flex">
+        <div class="p-6 border-b border-white/5">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="size-10 rounded-xl bg-gradient-to-tr from-primary to-purple-600 flex items-center justify-center shadow-lg glow-indigo font-bold text-xl">⚡</div>
+                <div>
+                    <h1 class="text-sm font-bold tracking-tight">RAG CORE</h1>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Production v2.0</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex flex-col gap-1">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-tighter font-bold">Qdrant Cluster</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold" id="cSt">Healthy</span>
+                        <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-accent/10 border border-emerald-accent/20">
+                            <span class="size-1.5 rounded-full bg-emerald-accent pulse"></span>
+                            <span class="text-[8px] font-bold text-emerald-accent uppercase tracking-wider">Online</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-white/5 rounded-lg p-2 border border-white/5">
+                        <p class="text-[9px] text-slate-500 font-bold">CHUNKS</p>
+                        <p class="text-xs font-mono font-bold text-primary" id="cPts">--</p>
+                    </div>
+                    <div class="bg-white/5 rounded-lg p-2 border border-white/5">
+                        <p class="text-[9px] text-slate-500 font-bold">DIM</p>
+                        <p class="text-xs font-mono font-bold text-emerald-accent" id="cDim">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 flex-1 overflow-y-auto space-y-6">
+            <div>
+                <h3 class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-4">Ingestion</h3>
+                <input id="iDir" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono focus:border-primary/50 outline-none mb-2" value="data/raw" />
+                <button id="iBtn" onclick="runIngest()" class="w-full py-2.5 rounded-lg bg-primary/20 border border-primary/30 text-[10px] font-bold uppercase tracking-widest hover:bg-primary/30 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">cloud_upload</span> Ingest Docs
+                </button>
+                <p id="iMsg" class="text-[9px] mt-2 font-mono text-emerald-accent break-words"></p>
+            </div>
+
+            <div>
+                <h3 class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-4">Examples</h3>
+                <div class="space-y-2">
+                    <button onclick="ask('How does the agentic search decompose multi-hop queries?')" class="w-full text-left p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px] text-slate-400 hover:text-white hover:border-primary/30 hover:bg-primary/5 transition-all">Agentic Multi-hop Logic</button>
+                    <button onclick="ask('Show me the latest architecture diagram for the RAG pipeline')" class="w-full text-left p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px] text-slate-400 hover:text-white hover:border-primary/30 hover:bg-primary/5 transition-all">Pipeline Architecture</button>
+                    <button onclick="ask('Compare the performance of BM25 vs Dense retrieval in our system')" class="w-full text-left p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px] text-slate-400 hover:text-white hover:border-primary/30 hover:bg-primary/5 transition-all">Retrieval Benchmark</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 border-t border-white/5">
+            <a href="http://localhost:6006" target="_blank" class="flex items-center justify-between p-3 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">analytics</span>
+                    <div>
+                        <p class="text-[10px] font-bold tracking-tight">Phoenix Trace</p>
+                        <p class="text-[8px] text-slate-500">Observability UI</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-xs text-slate-500">open_in_new</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-1 flex flex-col relative overflow-hidden bg-background-dark">
+        <!-- HEADER -->
+        <header class="h-16 glass border-b border-white/5 flex items-center justify-between px-6 shrink-0 relative z-20">
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400">MODEL:</span>
+                    <span class="text-xs font-mono px-2 py-1 bg-white/5 border border-white/10 rounded-md">llama-3.3-70b</span>
+                </div>
+                <div class="h-4 w-px bg-white/10"></div>
+                <div class="flex items-center gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
+                    <button id="mode-standard" onclick="setMode('standard')" class="px-4 py-1.5 text-[10px] font-bold rounded-md bg-primary text-white shadow-lg glow-indigo transition-all">STANDARD RAG</button>
+                    <button id="mode-agent" onclick="setMode('agent')" class="px-4 py-1.5 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-300 transition-all">AGENTIC MODE</button>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button onclick="clearChat()" class="p-2 text-slate-400 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined text-xl">delete</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- CHAT AREA -->
+        <div id="messages" class="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 scroll-smooth relative z-10">
+            <!-- EMPTY STATE -->
+            <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+                <div class="size-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 animate-bounce">
+                    <span class="material-symbols-outlined text-4xl text-primary">search_insights</span>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Research Assistant</h2>
+                <p class="text-sm text-slate-500 max-w-md mb-8">Ask complex queries requiring multi-hop reasoning or upload technical documents for deep semantic search.</p>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button onclick="ask('What is the difference between RRF and standard ranking?')" class="px-4 py-2 rounded-full border border-white/10 text-xs text-slate-400 hover:border-primary/50 hover:text-primary transition-all">What is RRF?</button>
+                    <button onclick="ask('Explain the multi-stage reranking process')" class="px-4 py-2 rounded-full border border-white/10 text-xs text-slate-400 hover:border-primary/50 hover:text-primary transition-all">Reranking Logic</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- INPUT -->
+        <div class="p-6 shrink-0 relative z-20">
+            <div class="max-w-4xl mx-auto relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
+                <div class="relative glass rounded-2xl border border-white/10 flex items-end p-2 gap-2 pr-4">
+                    <button id="uploadBtn" class="p-3 text-slate-500 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined">attach_file</span>
+                    </button>
+                    <input type="file" id="fileInput" accept="application/pdf" class="hidden" />
+                    <textarea id="q" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();send();}" 
+                        class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-3 px-2 resize-none max-h-48" placeholder="Type your query (Agentic mode for multi-step reasoning)..."></textarea>
+                    <div class="flex items-center gap-2 mb-1.5 shadow-xl">
+                        <div class="flex items-center gap-0.5 px-2 py-1 bg-black/40 rounded-lg border border-white/10">
+                            <span class="text-[9px] font-bold text-slate-500 mr-1">T-K:</span>
+                            <input id="topK" type="number" value="10" class="w-8 bg-transparent border-none p-0 text-[10px] font-bold text-primary focus:ring-0" />
+                        </div>
+                        <button id="sendBtn" onclick="send()" class="size-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg glow-indigo hover:scale-105 transition-transform">
+                            <span class="material-symbols-outlined">send</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- TRACE PANEL -->
+    <aside id="trace-panel" class="w-80 glass border-l border-white/5 flex flex-col shrink-0 translate-x-full transition-transform duration-300 absolute right-0 top-0 bottom-0 z-30 md:relative md:translate-x-0">
+        <div class="p-6 border-b border-white/5 flex items-center justify-between">
+            <h2 class="text-[10px] font-bold uppercase tracking-widest">Trace Analysis</h2>
+            <span class="text-[8px] px-1.5 py-0.5 rounded bg-primary/80 font-mono text-white">RECALL: 0.94</span>
+        </div>
+        <div id="trace-content" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Chunks will be injected here -->
+            <div class="text-center py-12 px-4">
+                <span class="material-symbols-outlined text-slate-700 text-4xl mb-4">analytics</span>
+                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">No Active Query</p>
+                <p class="text-[10px] text-slate-600 mt-2">Send a message to visualize retrieval steps.</p>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- TEMPLATES -->
+<template id="tpl-user">
+    <div class="flex items-start gap-4 justify-end">
+        <div class="bg-primary/10 border border-primary/20 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+            <p class="text-sm text-slate-100 whitespace-pre-wrap"></p>
+        </div>
+        <div class="size-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 border border-white/5">
+            <span class="material-symbols-outlined text-sm">person</span>
+        </div>
+    </div>
+</template>
+
+<template id="tpl-ai">
+    <div class="flex items-start gap-4">
+        <div class="size-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30 glow-indigo text-primary">
+            <span class="material-symbols-outlined text-sm">bolt</span>
+        </div>
+        <div class="flex flex-col gap-3 flex-1 min-w-0">
+            <div class="bg-white/5 border border-white/5 rounded-2xl rounded-tl-none px-5 py-4 text-sm leading-relaxed md-body"></div>
+            <div class="flex flex-wrap gap-2 sources-area"></div>
+        </div>
+    </div>
+</template>
+
+<script>
+    let currentMode = 'standard';
+    let sessionId = sessionStorage.getItem('rag_session_id') || crypto.randomUUID();
+    let lastUploadedFile = sessionStorage.getItem('last_file');
+    sessionStorage.setItem('rag_session_id', sessionId);
+
+    marked.setOptions({ breaks: true, gfm: true });
+
+    function cleanMarkdown(text) {
+        if (!text) return "";
+        // 1. Fix missing newlines before headers (e.g., "word## Header" -> "word\n\n## Header")
+        text = text.replace(/([^\n])(#{1,6}\s)/g, "$1\n\n$2");
+        
+        // 2. Fix citation clusters [Source , Source] -> [Source 1] [Source 2]
+        text = text.replace(/\[Source\s*(\d+)\s*,\s*Source\s*(\d+)\]/g, "[Source $1] [Source $2]");
+        text = text.replace(/\[Source\s*,\s*Source\s*,\s*Source\s*\]/g, "[Source 1] [Source 2] [Source 3]"); 
+        text = text.replace(/\[Source\s*,\s*Source\s*\]/g, "[Source 1] [Source 2]");
+        text = text.replace(/\[Source\s*,\s*\]/g, "[Source 1]");
+        
+        // 3. Fix mashed citations Answer[Source 1] -> Answer [Source 1]
+        text = text.replace(/([a-zA-Z0-9])(\[Source)/g, "$1 $2");
+        
+        return text;
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        const s = document.getElementById('mode-standard');
+        const a = document.getElementById('mode-agent');
+        if (mode === 'standard') {
+            s.className = "px-4 py-1.5 text-[10px] font-bold rounded-md bg-primary text-white shadow-lg glow-indigo transition-all";
+            a.className = "px-4 py-1.5 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-300 transition-all";
+        } else {
+            a.className = "px-4 py-1.5 text-[10px] font-bold rounded-md bg-emerald-accent text-slate-900 shadow-lg glow-emerald transition-all";
+            s.className = "px-4 py-1.5 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-300 transition-all";
+        }
+    }
+
+    async function checkHealth() {
+        try {
+            const r = await fetch('/health');
+            const d = await r.json();
+            document.getElementById('cSt').textContent = d.status === 'healthy' ? 'Healthy' : 'Degraded';
+        } catch {}
+    }
+
+    async function loadStats() {
+        try {
+            const r = await fetch('/api/v1/stats');
+            const d = await r.json();
+            document.getElementById('cPts').textContent = d.points_count?.toLocaleString() || '--';
+            document.getElementById('cDim').textContent = d.vector_dimension ? d.vector_dimension + '-d' : '--';
+        } catch {}
+    }
+
+    function ask(q) {
+        const input = document.getElementById('q');
+        input.value = q;
+        input.style.height = 'auto';
+        input.style.height = input.scrollHeight + 'px';
+        send();
+    }
+
+    function clearChat() {
+        document.getElementById('messages').innerHTML = '';
+        document.getElementById('messages').appendChild(document.getElementById('empty-state').cloneNode(true));
+        document.getElementById('trace-content').innerHTML = `
+            <div class="text-center py-12 px-4 shadow-xl">
+                <span class="material-symbols-outlined text-slate-700 text-4xl mb-4">analytics</span>
+                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">No Active Query</p>
+                <p class="text-[10px] text-slate-600 mt-2">Send a message to visualize retrieval steps.</p>
+            </div>`;
+    }
+
+    async function runIngest() {
+        const dir = document.getElementById('iDir').value;
+        const msg = document.getElementById('iMsg');
+        msg.textContent = "... Ingesting Documents ...";
+        try {
+            const r = await fetch('/api/v1/ingest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ directory: dir })
+            });
+            const d = await r.json();
+            msg.textContent = `✓ ${d.vectors_stored} vecs stored.`;
+            loadStats();
+        } catch (e) {
+            msg.textContent = "✗ Error during ingestion.";
+        }
+    }
+
+    async function send() {
+        const input = document.getElementById('q');
+        const question = input.value.trim();
+        if (!question) return;
+        
+        const messages = document.getElementById('messages');
+        const empty = document.getElementById('empty-state');
+        if (empty) empty.remove();
+        
+        // Add User Message
+        const uTpl = document.getElementById('tpl-user').content.cloneNode(true);
+        uTpl.querySelector('p').textContent = question;
+        messages.appendChild(uTpl);
+        
+        input.value = '';
+        input.style.height = 'auto';
+        
+        // Add AI Placeholder
+        const aiTpl = document.getElementById('tpl-ai').content.cloneNode(true);
+        const mdDiv = aiTpl.querySelector('.md-body');
+        const srcArea = aiTpl.querySelector('.sources-area');
+        messages.appendChild(aiTpl);
+        
+        const currentMsgDiv = messages.lastElementChild;
+        messages.scrollTop = messages.scrollHeight;
+        
+        const topK = parseInt(document.getElementById('topK').value) || 10;
+        
+        if (currentMode === 'standard') {
+            await handleStandardStream(question, topK, mdDiv, srcArea);
+        } else {
+            await handleAgenticQuery(question, topK, mdDiv, srcArea);
+        }
+    }
+
+    async function handleStandardStream(question, topK, mdDiv, srcArea) {
+        mdDiv.innerHTML = '<div class="flex gap-1 items-center opacity-50"><span class="size-1 bg-slate-400 rounded-full animate-pulse"></span><span class="size-1 bg-slate-400 rounded-full animate-pulse delay-75"></span><span class="size-1 bg-slate-400 rounded-full animate-pulse delay-150"></span></div>';
+        try {
+            const filters = lastUploadedFile ? { filename: lastUploadedFile } : {};
+            const r = await fetch('/api/v1/chat/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    question, 
+                    top_k: topK, 
+                    session_id: sessionId,
+                    filters: filters
+                })
+            });
+            
+            const reader = r.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = "";
+            let sourcesFound = false;
+            
+            mdDiv.innerHTML = "";
+            
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const content = line.slice(6);
+                        if (content === '[DONE]') continue;
+                        try {
+                            const data = JSON.parse(content);
+                            if (data.answer) {
+                                fullText += data.answer;
+                                mdDiv.innerHTML = marked.parse(cleanMarkdown(fullText));
+                                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+                            }
+                            if (data.sources && !sourcesFound) {
+                                sourcesFound = true;
+                                renderSources(data.sources, srcArea);
+                            }
+                        } catch {
+                            fullText += content;
+                            mdDiv.innerHTML = marked.parse(cleanMarkdown(fullText));
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            mdDiv.innerHTML = `<span class="text-red-500">Error: ${e.message}</span>`;
+        }
+    }
+
+    async function handleAgenticQuery(question, topK, mdDiv, srcArea) {
+        mdDiv.innerHTML = '<div class="flex flex-col gap-2"><span class="text-[10px] text-emerald-accent font-bold animate-pulse">AGENT THINKING...</span><div class="h-2 w-48 bg-white/5 rounded-full overflow-hidden"><div class="h-full bg-emerald-accent animate-[loading_2s_ease-in-out_infinite] w-0"></div></div></div><style>@keyframes loading { 0% { width: 0; } 50% { width: 100%; } 100% { width: 0; } }</style>';
+        try {
+            const filters = lastUploadedFile ? { filename: lastUploadedFile } : {};
+            const r = await fetch('/api/v1/agent/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    question, 
+                    top_k: topK, 
+                    session_id: sessionId,
+                    filters: filters
+                })
+            });
+            if (!r.ok) {
+                const err = await r.json();
+                throw new Error(err.detail || 'Agent failed to respond');
+            }
+            const d = await r.json();
+            mdDiv.innerHTML = marked.parse(d.answer || "_No answer returned by agent._");
+            if (d.sources) renderSources(d.sources, srcArea);
+        } catch (e) {
+            mdDiv.innerHTML = `<div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">error</span>
+                Error: ${e.message}
+            </div>`;
+        }
+    }
+
+    function renderSources(sources, container) {
+        container.innerHTML = "";
+        const tracePanel = document.getElementById('trace-content');
+        tracePanel.innerHTML = "";
+        
+        sources.forEach((s, i) => {
+            const chip = document.createElement('div');
+            chip.className = "flex items-center gap-2 px-2 py-1 rounded bg-white/5 border border-white/10 text-[9px] text-slate-400";
+            chip.innerHTML = `<span class="size-1.5 rounded-full bg-emerald-accent shadow-xl"></span> ${s.filename}`;
+            container.appendChild(chip);
+            
+            const card = document.createElement('div');
+            card.className = "glass p-3 rounded-xl border border-white/5 space-y-2";
+            card.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-mono text-emerald-accent font-bold">#${i+1} SCORE: ${s.relevance_score?.toFixed(3) || '0.0'}</span>
+                    <span class="text-[8px] text-slate-500">${s.filename}</span>
+                </div>
+                <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden shadow-xl">
+                    <div class="h-full bg-emerald-accent" style="width: ${(s.relevance_score||0)*100}%"></div>
+                </div>
+                <p class="text-[10px] text-slate-400 line-clamp-3">${s.text || 'Context snippet...'}</p>
+            `;
+            tracePanel.appendChild(card);
+        });
+    }
+
+    // ── File Upload Logic ────────────────────────────────
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadBtn.onclick = () => fileInput.click();
+
+    fileInput.onchange = async () => {
+        if (fileInput.files.length === 0) return;
+        const file = fileInput.files[0];
+        const msg = document.getElementById('iMsg');
+        msg.textContent = `... Uploading ${file.name} ...`;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const r = await fetch('/api/v1/upload', {
+                method: 'POST',
+                body: formData
+            });
+            if (!r.ok) throw new Error('Upload failed');
+            const d = await r.json();
+            msg.textContent = `✓ ${file.name} uploaded & indexed.`;
+            lastUploadedFile = file.name;
+            sessionStorage.setItem('last_file', file.name);
+            loadStats();
+            
+            // Proactively show the short description in chat
+            const messages = document.getElementById('messages');
+            const empty = document.getElementById('empty-state');
+            if (empty) empty.remove();
+            
+            const aiTpl = document.getElementById('tpl-ai').content.cloneNode(true);
+            aiTpl.querySelector('.md-body').innerHTML = marked.parse(`**File Uploaded: ${file.name}**\n\n${d.short_description}`);
+            messages.appendChild(aiTpl);
+            messages.scrollTop = messages.scrollHeight;
+            
+        } catch (e) {
+            msg.textContent = `✗ Error: ${e.message}`;
+        }
+        fileInput.value = ''; // Reset
+    };
+
+    checkHealth(); loadStats();
+    setInterval(checkHealth, 30000);
+</script>
+</body>
+</html>
