@@ -93,20 +93,44 @@ async def lifespan(app: FastAPI):
         model=settings.llm_model,
     )
 
-    # ── Startup: verify Qdrant storage is accessible ──────────
+    # ── Startup: verify Qdrant storage is accessible and auto-ingest if empty ──
     try:
         from config.qdrant_client import get_qdrant_client
+        from ingestion.loaders import DocumentLoader
+        from ingestion.chunking import SemanticChunker
+        from ingestion.embedding_pipeline import EmbeddingPipeline
+        from pathlib import Path
 
         client = get_qdrant_client()
         collections = [c.name for c in client.get_collections().collections]
+        
+        should_ingest = False
         if settings.qdrant_collection in collections:
             info = client.get_collection(settings.qdrant_collection)
             points = info.points_count or 0
             logger.info("qdrant_ready", collection=settings.qdrant_collection, points=points)
+            if points == 0:
+                should_ingest = True
         else:
             logger.warning("collection_not_found", collection=settings.qdrant_collection)
+            should_ingest = True
+
+        if should_ingest:
+            raw_dir = Path("data/raw")
+            if raw_dir.is_dir():
+                print(f"📥 Collection empty. Auto-ingesting documents from {raw_dir}...")
+                loader = DocumentLoader()
+                chunker = SemanticChunker()
+                pipeline = EmbeddingPipeline()
+                
+                docs = loader.load_directory(raw_dir)
+                if docs:
+                    chunks = chunker.chunk_documents(docs)
+                    pipeline.ensure_collection()
+                    pipeline.ingest(chunks)
+                    logger.info("auto_ingest_success", docs=len(docs), chunks=len(chunks))
     except Exception as exc:
-        logger.warning("qdrant_check_failed", error=str(exc))
+        logger.warning("startup_auto_ingest_failed", error=str(exc))
 
     yield
     logger.info("app_shutting_down")
