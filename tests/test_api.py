@@ -1,17 +1,26 @@
+import os
 import sys
-from unittest.mock import MagicMock, patch
 
-import pytest
+try:
+    from unittest.mock import MagicMock, patch
 
-# Mock heavy/missing dependencies for CI collection
-sys.modules["llama_index.embeddings.huggingface"] = MagicMock()
-sys.modules["llama_index.llms.openai"] = MagicMock()
-sys.modules["llama_index.llms.groq"] = MagicMock()
-sys.modules["arize_phoenix"] = MagicMock()
+    import pytest
 
-from fastapi.testclient import TestClient
+    # Mock heavy/missing dependencies for CI collection
+    sys.modules["llama_index.embeddings.huggingface"] = MagicMock()
+    sys.modules["llama_index.llms.openai"] = MagicMock()
+    sys.modules["llama_index.llms.groq"] = MagicMock()
+    sys.modules["arize_phoenix"] = MagicMock()
 
-from api.main import app
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+except Exception as e:
+    print(f"\n❌ CRITICAL COLLECTION ERROR: {e}")
+    import traceback
+
+    traceback.print_exc()
+    sys.exit(2)
 
 client = TestClient(app)
 
