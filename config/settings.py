@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     # ── LLM ───────────────────────────────────────────────
     openai_api_key: str = ""
     llm_model: str = "gpt-4o"
-    embedding_model: str = "text-embedding-3-small"
-    embedding_dimension: int = 1536
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dimension: int = 384
 
     # ── Groq (free LLM fallback) ──────────────────────────
     groq_api_key: str = ""
