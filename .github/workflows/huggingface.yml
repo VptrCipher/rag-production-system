@@ -1,0 +1,36 @@
+name: Sync to Hugging Face Hub
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+          
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # The USERNAME and SPACE_NAME are set from variables to make it easy to copy.
+          # You must add these as Repository Variables in GitHub settings!
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "Error: HF_TOKEN is not set in GitHub Secrets."
+            exit 1
+          fi
+          
+          # We use the GitHub repository owner name as the default HF username
+          # And the repository name as the Space name
+          # Change these if your Hugging Face username/space name differs from GitHub
+          HF_USERNAME="${{ github.repository_owner }}"
+          SPACE_NAME="rag-production-system"
+          
+          git remote add space https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/$SPACE_NAME
+          
+          # Force push to the space main branch
+          git push --force space main

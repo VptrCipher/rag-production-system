@@ -73,15 +73,16 @@ graph TD
 
 ## 🚀 Deployment
 
-### Cloud Demo (Recommended: Hugging Face Spaces)
-Because the system requires a Python backend and a database, **GitHub Pages (static only) is not supported**. 
+### Cloud Demo (Automated Hugging Face Spaces)
+Because the system requires a Python backend and a Vector Database, **GitHub Pages (static only) is not supported**. 
 
-To host a live "working model" for an interviewer:
-1.  Go to [Hugging Face New Space](https://huggingface.co/new-space).
-2.  Select **Docker** as the SDK.
-3.  Choose **Blank** (or connect your GitHub repo `VptrCipher/rag-production-system`).
-4.  **Important**: Add your Secrets in **Settings → Variables and Secrets** (e.g., `OPENAI_API_KEY`, `GROQ_API_KEY`).
-5.  The Space will automatically build from the `Dockerfile` and listen on port `7860`.
+However, this repository is configured to **automatically deploy** a live "working model" to [Hugging Face Spaces](https://huggingface.co/spaces) every time you push to the `main` branch!
+
+To activate the automatic deployment so others can use your app:
+1. **Create a Space**: Go to [Hugging Face](https://huggingface.co/new-space) and create a new Space using the **Docker** template. Name it `rag-production-system`.
+2. **Add GitHub Secret**: Go to your GitHub repository **Settings > Secrets and variables > Actions**. Add a new repository secret called `HF_TOKEN` containing your Hugging Face Access Token (with *write* permissions).
+3. **Configure Space Secrets**: In your Hugging Face Space settings, add your `GROQ_API_KEY` (or `OPENAI_API_KEY`) and `COHERE_API_KEY`.
+4. **Push to Main**: The next time you push to GitHub, the Action will automatically sync and deploy your app to `https://huggingface.co/spaces/YOUR_USERNAME/rag-production-system`.
 
 ### Local Deployment
 ```bash
