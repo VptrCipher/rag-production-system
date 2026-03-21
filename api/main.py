@@ -82,7 +82,7 @@ async def lifespan(app: FastAPI):
     # ── Startup: Validate configuration ───────────────
     if not settings.openai_api_key and not settings.groq_api_key:
         logger.error("missing_api_keys", error="Neither OpenAI nor Groq API keys found.")
-    
+
     if not settings.qdrant_collection:
         logger.error("missing_qdrant_config", error="Qdrant collection name not set.")
 
