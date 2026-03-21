@@ -1,8 +1,7 @@
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-import sys
-from unittest.mock import MagicMock
 
 # Mock heavy/missing dependencies for CI collection
 sys.modules["llama_index.embeddings.huggingface"] = MagicMock()
