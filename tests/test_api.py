@@ -1,6 +1,15 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+import sys
+from unittest.mock import MagicMock
+
+# Mock heavy/missing dependencies for CI collection
+sys.modules["llama_index.embeddings.huggingface"] = MagicMock()
+sys.modules["llama_index.llms.openai"] = MagicMock()
+sys.modules["llama_index.llms.groq"] = MagicMock()
+sys.modules["arize_phoenix"] = MagicMock()
+
 from fastapi.testclient import TestClient
 
 from api.main import app
