@@ -71,7 +71,7 @@ class ResponseGenerator:
             from groq import Groq
 
             self.client = Groq(api_key=self.settings.groq_api_key)
-            self.model = model or "llama-3.3-70b-versatile"
+            self.model = model or ("llama-3.3-70b-versatile" if self.settings.llm_model == "gpt-4o" else self.settings.llm_model)
             self._backend = "groq"
             logger.info("llm_backend", backend="groq", model=self.model)
         elif self.settings.openai_api_key:

@@ -82,11 +82,14 @@ class Settings(BaseSettings):
         if self.openai_api_key:
             from llama_index.llms.openai import OpenAI
 
-            LlamaSettings.llm = OpenAI(model=self.llm_model, api_key=self.openai_api_key)
+            model_to_use = self.llm_model if self.llm_model == "gpt-4o" else self.llm_model
+            LlamaSettings.llm = OpenAI(model=model_to_use, api_key=self.openai_api_key)
         elif self.groq_api_key:
             from llama_index.llms.groq import Groq
 
-            LlamaSettings.llm = Groq(model=self.llm_model, api_key=self.groq_api_key)
+            # Force compatible Groq model if the global variable is left as the OpenAI default
+            model_to_use = "llama-3.3-70b-versatile" if self.llm_model == "gpt-4o" else self.llm_model
+            LlamaSettings.llm = Groq(model=model_to_use, api_key=self.groq_api_key)
 
         # Templates: Inject our custom structured prompt
         from generation.prompt_templates import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
