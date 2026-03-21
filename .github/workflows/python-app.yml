@@ -38,4 +38,4 @@ jobs:
         isort --check-only .
     - name: Test with pytest
       run: |
-        pytest tests/
+        pytest -s -v tests/

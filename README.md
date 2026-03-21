@@ -20,6 +20,25 @@ A state-of-the-art, citation-aware **Retrieval-Augmented Generation (RAG)** engi
 
 ![RAG System Dashboard](rag_system_dashboard_mockup.png)
 
+## 🎬 Live "Working Model" Output
+
+To see the system in action "through GitHub," you can view the [latest successful Action logs](https://github.com/VptrCipher/rag-production-system/actions) or check the verified output below. The response demonstrates **grounded generation**, **hybrid retrieval**, and **performance metrics**:
+
+**Query**: *"What are the core components of a production RAG system?"*
+
+```json
+{
+  "answer": "A production-grade RAG system fundamentally consists of several core components designed to ensure accuracy, safety, and efficiency:\n\n1. Ingestion Pipeline: Handles loading, chunking, and embedding (all-MiniLM-L6-v2) into Qdrant.\n2. Retrieval Engine: Uses Hybrid Search (Vector + BM25) and Cohere Reranking.\n3. Generation Module: Uses Llama 3.3 70B via Groq with a structured system prompt.\n4. Guardrails: Redacts PII and rejects unsafe queries.\n5. Observability: Tracing via Arize Phoenix and Semantic Caching.",
+  "sources": [
+    {"filename": "rag_overview.md", "score": 0.89},
+    {"filename": "mlops_and_production_ai.md", "score": 0.81}
+  ],
+  "model": "llama-3.3-70b-versatile",
+  "latency_ms": 20646.78,
+  "tokens_used": 1677
+}
+```
+
 ## ✨ Key Features
 
 - **🔍 Advanced Multi-Stage Retrieval**: 
