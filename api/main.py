@@ -80,12 +80,11 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
 
     # ── Startup: Validate configuration ───────────────
-    critical_keys = ["openai_api_key", "qdrant_collection"]
-    missing = [key for key in critical_keys if not getattr(settings, key)]
-    if missing:
-        logger.error("missing_required_config", missing=missing)
-        # In a real production system, we might want to sys.exit(1) here
-        # but for this environment we'll just log loudly.
+    if not settings.openai_api_key and not settings.groq_api_key:
+        logger.error("missing_api_keys", error="Neither OpenAI nor Groq API keys found.")
+    
+    if not settings.qdrant_collection:
+        logger.error("missing_qdrant_config", error="Qdrant collection name not set.")
 
     settings.configure_llama_index()  # Initialize LlamaIndex models
     logger.info(
