@@ -83,10 +83,7 @@ class VectorSearcher:
         if filters:
             from qdrant_client.http.models import FieldCondition, Filter, MatchValue
 
-            conditions = [
-                FieldCondition(key=k, match=MatchValue(value=v))
-                for k, v in filters.items()
-            ]
+            conditions = [FieldCondition(key=k, match=MatchValue(value=v)) for k, v in filters.items()]
             query_filter = Filter(must=conditions)
 
         # Using query_points as search is missing in this version
@@ -103,9 +100,9 @@ class VectorSearcher:
         for hit in hits:
             payload = hit.payload or {}
             score = 0.0
-            if hasattr(hit, 'score'):
+            if hasattr(hit, "score"):
                 score = hit.score
-            
+
             results.append(
                 SearchResult(
                     text=payload.get("text", ""),

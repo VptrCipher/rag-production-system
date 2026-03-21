@@ -130,7 +130,7 @@ class EvaluationDatasetBuilder:
                 "Given the following text, generate exactly ONE question that "
                 "can be answered from it, and provide the ground truth answer.\n\n"
                 f"Text:\n{text[:2000]}\n\n"
-                "Respond in JSON: {\"question\": \"...\", \"ground_truth\": \"...\"}"
+                'Respond in JSON: {"question": "...", "ground_truth": "..."}'
             )
             response = client.chat.completions.create(
                 model=settings.llm_model,

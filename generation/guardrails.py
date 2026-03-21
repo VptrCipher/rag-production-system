@@ -1,19 +1,24 @@
 import re
-import structlog
 from typing import Tuple
+
+import structlog
+
 from config import get_settings
 
 logger = structlog.get_logger(__name__)
+
 
 class Guardrails:
     def __init__(self):
         self.settings = get_settings()
         if self.settings.groq_api_key:
             from groq import Groq
+
             self.client = Groq(api_key=self.settings.groq_api_key)
             self.model = "llama-3.1-8b-instant"
         elif self.settings.openai_api_key:
             import openai
+
             self.client = openai.OpenAI(api_key=self.settings.openai_api_key)
             self.model = "gpt-4o-mini"
         else:
@@ -74,7 +79,7 @@ Output:"""
             if "UNSAFE" in decision:
                 logger.warning("guardrail_triggered", query=safe_query)
                 return False, "I cannot answer this question as it violates safety guidelines."
-            
+
             return True, ""
         except Exception as e:
             logger.error("guardrail_check_error", error=str(e))

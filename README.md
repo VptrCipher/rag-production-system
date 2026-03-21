@@ -14,6 +14,7 @@ pinned: false
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100.0+-009688.svg)](https://fastapi.tiangolo.com)
 [![Qdrant](https://img.shields.io/badge/VectorDB-Qdrant-red.svg)](https://qdrant.tech/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/VptrCipher/rag-production-system/actions/workflows/python-app.yml/badge.svg)](https://github.com/VptrCipher/rag-production-system/actions)
 
 A state-of-the-art, citation-aware **Retrieval-Augmented Generation (RAG)** engine designed for production environments. This system doesn't just "talk" to your data—it reasons across it with multi-stage verification, hybrid retrieval, and agentic sub-question decomposition.
 

@@ -1,20 +1,26 @@
 """Hypothetical Document Embeddings (HyDE) generator."""
-from config import get_settings
+
 import structlog
+
+from config import get_settings
 
 logger = structlog.get_logger(__name__)
 
+
 class HyDEGenerator:
     """Generates a hypothetical document/answer to improve similarity search."""
+
     def __init__(self):
         self.settings = get_settings()
         if self.settings.groq_api_key:
             from groq import Groq
+
             self.client = Groq(api_key=self.settings.groq_api_key)
             self.model = "llama-3.1-8b-instant"
             self._backend = "groq"
         elif self.settings.openai_api_key:
             import openai
+
             self.client = openai.OpenAI(api_key=self.settings.openai_api_key)
             self.model = "gpt-4o-mini"
             self._backend = "openai"
@@ -26,7 +32,7 @@ class HyDEGenerator:
         """Generate a hypothetical answer to the query."""
         if not self.client:
             return query
-            
+
         prompt = f"""You are a knowledgeable expert. Please write a short, factual answer to the following question. Do not include any conversational filler.
 Question: {query}
 Answer:"""

@@ -11,16 +11,14 @@ QdrantClient directly.
 
 from __future__ import annotations
 
-from typing import Optional
-
-from qdrant_client import QdrantClient
-
 import threading
 from typing import Optional
+
 from qdrant_client import QdrantClient
 
 _client: Optional[QdrantClient] = None
 _lock = threading.Lock()
+
 
 def get_qdrant_client() -> QdrantClient:
     """Return the shared QdrantClient instance (local disk mode)."""

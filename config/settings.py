@@ -12,12 +12,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from llama_index.core import Settings as LlamaSettings
+from llama_index.core.prompts import PromptTemplate
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai import OpenAI
-from llama_index.core.prompts import PromptTemplate
-
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
@@ -73,27 +72,29 @@ class Settings(BaseSettings):
     data_dir: str = "data"
     log_dir: str = "logs"
 
-
     def configure_llama_index(self):
         """Configure global LlamaIndex settings with fallbacks."""
         # Embeddings: Use local HuggingFace if OpenAI key is missing
         if not self.openai_api_key:
             LlamaSettings.embed_model = HuggingFaceEmbedding(model_name=self.embedding_model)
-        
+
         # LLM: Use OpenAI or Groq fallback
         if self.openai_api_key:
             from llama_index.llms.openai import OpenAI
+
             LlamaSettings.llm = OpenAI(model=self.llm_model, api_key=self.openai_api_key)
         elif self.groq_api_key:
             from llama_index.llms.groq import Groq
+
             LlamaSettings.llm = Groq(model=self.llm_model, api_key=self.groq_api_key)
-        
+
         # Templates: Inject our custom structured prompt
         from generation.prompt_templates import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
-        
+
         # Create a combined template that mirrors our system reasoning
         full_template = SYSTEM_PROMPT + "\n\n" + USER_PROMPT_TEMPLATE
         LlamaSettings.text_qa_template = PromptTemplate(full_template)
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

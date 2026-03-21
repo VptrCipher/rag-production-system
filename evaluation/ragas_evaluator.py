@@ -128,9 +128,7 @@ class RAGASEvaluator:
             "scores": scores,
             "evaluation_time_s": elapsed_s,
             "thresholds": self.thresholds,
-            "passed": all(
-                scores[m] >= t for m, t in self.thresholds.items()
-            ),
+            "passed": all(scores[m] >= t for m, t in self.thresholds.items()),
         }
 
         logger.info("evaluation_complete", **scores, elapsed_s=elapsed_s)
@@ -142,9 +140,7 @@ class RAGASEvaluator:
         failures: List[str] = []
         for metric, threshold in self.thresholds.items():
             if scores.get(metric, 0) < threshold:
-                failures.append(
-                    f"{metric}: {scores[metric]:.3f} < {threshold:.3f}"
-                )
+                failures.append(f"{metric}: {scores[metric]:.3f} < {threshold:.3f}")
         if failures:
             msg = "RAGAS threshold check FAILED:\n" + "\n".join(failures)
             logger.error("threshold_check_failed", failures=failures)

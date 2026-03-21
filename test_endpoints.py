@@ -1,14 +1,13 @@
-import requests
 import json
+
+import requests
 
 base_url = "http://127.0.0.1:8000/api/v1"
 
+
 def test_query():
     print("Testing /query endpoint...")
-    payload = {
-        "question": "Explain RAG in simple terms.",
-        "session_id": "verify_session_01"
-    }
+    payload = {"question": "Explain RAG in simple terms.", "session_id": "verify_session_01"}
     response = requests.post(f"{base_url}/query", json=payload)
     if response.status_code == 200:
         print("Success!")
@@ -17,12 +16,10 @@ def test_query():
         print(f"Failed: {response.status_code}")
         print(response.text)
 
+
 def test_stream():
     print("\nTesting /chat/stream endpoint...")
-    payload = {
-        "question": "How does semantic chunking work?",
-        "session_id": "verify_session_01"
-    }
+    payload = {"question": "How does semantic chunking work?", "session_id": "verify_session_01"}
     response = requests.post(f"{base_url}/chat/stream", json=payload, stream=True)
     if response.status_code == 200:
         print("Success! Streaming response:")
@@ -33,6 +30,7 @@ def test_stream():
     else:
         print(f"Failed: {response.status_code}")
         print(response.text)
+
 
 if __name__ == "__main__":
     try:

@@ -18,8 +18,8 @@ from typing import Dict, List, Optional
 import structlog
 
 from config import get_settings
-from retrieval.vector_search import SearchResult, VectorSearcher
 from retrieval.bm25_search import BM25Searcher
+from retrieval.vector_search import SearchResult, VectorSearcher
 
 logger = structlog.get_logger(__name__)
 
@@ -80,9 +80,7 @@ class HybridSearcher:
         bm25_results = self.bm25.search(query, top_k=top_k, filters=filters)
 
         # 3. Reciprocal Rank Fusion
-        fused = self._reciprocal_rank_fusion(
-            vector_results, bm25_results, vw, bw
-        )
+        fused = self._reciprocal_rank_fusion(vector_results, bm25_results, vw, bw)
 
         # 4. Take top_k
         fused = fused[:top_k]

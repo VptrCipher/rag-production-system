@@ -69,12 +69,14 @@ class ResponseGenerator:
         # ── Prefer Groq (free) when a key is configured ───────
         if self.settings.groq_api_key:
             from groq import Groq
+
             self.client = Groq(api_key=self.settings.groq_api_key)
             self.model = model or "llama-3.3-70b-versatile"
             self._backend = "groq"
             logger.info("llm_backend", backend="groq", model=self.model)
         elif self.settings.openai_api_key:
             import openai
+
             self.client = openai.OpenAI(api_key=self.settings.openai_api_key)
             self.model = model or self.settings.llm_model
             self._backend = "openai"
@@ -108,28 +110,27 @@ class ResponseGenerator:
             contexts_used=len(contexts),
             sources=sources,
         )
-    
+
     def _clean_response(self, text: str) -> str:
         """Clean up LLM artifacts like malformed citations or extra spaces."""
         import re
-        
-        # 1. Clean up [Source N , Source M] -> [Source N] [Source M]
-        text = re.sub(r'\[Source\s*(\d+)\s*,\s*Source\s*(\d+)\]', r'[Source \1] [Source \2]', text)
-        
-        # 2. Clean up [Source N , ] or [Source , N]
-        text = re.sub(r'\[Source\s*(\d+)\s*,\s*\]', r'[Source \1]', text)
-        text = re.sub(r'\[Source\s*,\s*(\d+)\]', r'[Source \1]', text)
-        text = re.sub(r'\[,\s*Source\s*(\d+)\]', r'[Source \1]', text)
-        
-        # 3. Clean up single empty source [Source , ]
-        text = re.sub(r'\[Source\s*,\s*\]', '', text)
-        
-        # 4. Ensure space before opening bracket and after closing bracket
-        text = re.sub(r'([A-Za-z0-9])(\[Source)', r'\1 \2', text)
-        text = re.sub(r'(\])([A-Za-z0-9])', r'\1 \2', text)
-        
-        return text.strip()
 
+        # 1. Clean up [Source N , Source M] -> [Source N] [Source M]
+        text = re.sub(r"\[Source\s*(\d+)\s*,\s*Source\s*(\d+)\]", r"[Source \1] [Source \2]", text)
+
+        # 2. Clean up [Source N , ] or [Source , N]
+        text = re.sub(r"\[Source\s*(\d+)\s*,\s*\]", r"[Source \1]", text)
+        text = re.sub(r"\[Source\s*,\s*(\d+)\]", r"[Source \1]", text)
+        text = re.sub(r"\[,\s*Source\s*(\d+)\]", r"[Source \1]", text)
+
+        # 3. Clean up single empty source [Source , ]
+        text = re.sub(r"\[Source\s*,\s*\]", "", text)
+
+        # 4. Ensure space before opening bracket and after closing bracket
+        text = re.sub(r"([A-Za-z0-9])(\[Source)", r"\1 \2", text)
+        text = re.sub(r"(\])([A-Za-z0-9])", r"\1 \2", text)
+
+        return text.strip()
 
     def generate(
         self,
@@ -255,9 +256,11 @@ class ResponseGenerator:
             # Take chunks from start, middle, and end
             start_chunk = text[:8000]
             mid_point = len(text) // 2
-            mid_chunk = text[mid_point-4000:mid_point+4000]
+            mid_chunk = text[mid_point - 4000 : mid_point + 4000]
             end_chunk = text[-8000:]
-            summarization_content = f"--- START ---\n{start_chunk}\n\n--- MIDDLE ---\n{mid_chunk}\n\n--- END ---\n{end_chunk}"
+            summarization_content = (
+                f"--- START ---\n{start_chunk}\n\n--- MIDDLE ---\n{mid_chunk}\n\n--- END ---\n{end_chunk}"
+            )
         else:
             summarization_content = text[:24000]
 
@@ -266,13 +269,13 @@ class ResponseGenerator:
             f"{'A short description should be about 2 sentences.' if length == 'short' else 'A long description should be a detailed and structured breakdown.'} "
             f"Focus on the main topics, technical specifics, and key takeaways.\n\nContent:\n{summarization_content}"
         )
-        
+
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that summarizes technical documents."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
                 max_tokens=300 if length == "short" else 800,

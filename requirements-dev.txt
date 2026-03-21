@@ -1,0 +1,20 @@
+# CI/CD Optimized Requirements
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+python-dotenv
+structlog
+requests
+pytest
+pytest-mock
+pytest-asyncio
+black
+isort
+flake8
+mypy
+llama-index-core
+# Mock these using pytest-mock in CI
+# unstructured
+# ragas
+# qdrant-client

@@ -127,6 +127,7 @@ class DocumentLoader:
         """Extract text from images using OCR."""
         try:
             from llama_index.readers.file import ImageReader
+
             loader = ImageReader(keep_image=False)
             documents = loader.load_data(file=path)
             return "\n".join([d.text for d in documents])

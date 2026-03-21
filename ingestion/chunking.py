@@ -142,6 +142,7 @@ class DocumentChunker:
 
 class SemanticChunker(DocumentChunker):
     """Chunk documents semantically by comparing sentence embeddings."""
+
     def __init__(
         self,
         embed_model_name: Optional[str] = None,
@@ -161,15 +162,17 @@ class SemanticChunker(DocumentChunker):
         sentences = [s.strip() for s in sentences if s.strip()]
         if not sentences:
             return []
-            
+
         embeddings = self.embed_model.encode(sentences)
-        
+
         chunks = []
         current_chunk = [sentences[0]]
-        
+
         for i in range(1, len(sentences)):
-            sim = np.dot(embeddings[i-1], embeddings[i]) / (np.linalg.norm(embeddings[i-1]) * np.linalg.norm(embeddings[i]))
-            
+            sim = np.dot(embeddings[i - 1], embeddings[i]) / (
+                np.linalg.norm(embeddings[i - 1]) * np.linalg.norm(embeddings[i])
+            )
+
             # If similarity drops below threshold or max size is reached, split
             current_len = sum(len(s) for s in current_chunk) + len(sentences[i])
             if sim < self.similarity_threshold or current_len > self.chunk_size:
@@ -177,9 +180,8 @@ class SemanticChunker(DocumentChunker):
                 current_chunk = [sentences[i]]
             else:
                 current_chunk.append(sentences[i])
-                
+
         if current_chunk:
             chunks.append(" ".join(current_chunk))
-            
-        return chunks
 
+        return chunks

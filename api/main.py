@@ -20,6 +20,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if os.getenv("PHOENIX_ENABLE") == "true":
     try:
         from scripts.phoenix_setup import setup_phoenix
+
         setup_phoenix()
     except ImportError:
         print("Phoenix setup failed: dependencies missing. Run pip install arize-phoenix")
@@ -38,8 +39,10 @@ logger = structlog.get_logger(__name__)
 
 
 import time
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
+
 
 # Simple in-memory rate limiter
 class RateLimitMiddleware:
@@ -47,7 +50,7 @@ class RateLimitMiddleware:
         self.app = app
         self.max_requests = max_requests
         self.window_seconds = window_seconds
-        self.request_history = {} # {ip: [timestamps]}
+        self.request_history = {}  # {ip: [timestamps]}
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -57,15 +60,12 @@ class RateLimitMiddleware:
         # Extract client IP
         client_ip = scope.get("client", ["unknown"])[0]
         now = time.time()
-        
+
         # Clean up old timestamps
         history = [ts for ts in self.request_history.get(client_ip, []) if now - ts < self.window_seconds]
-        
+
         if len(history) >= self.max_requests:
-            response = JSONResponse(
-                status_code=429,
-                content={"detail": "Too many requests. Please try again later."}
-            )
+            response = JSONResponse(status_code=429, content={"detail": "Too many requests. Please try again later."})
             await response(scope, receive, send)
             return
 
@@ -73,11 +73,12 @@ class RateLimitMiddleware:
         self.request_history[client_ip] = history
         await self.app(scope, receive, send)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown hooks."""
     settings = get_settings()
-    
+
     # ── Startup: Validate configuration ───────────────
     critical_keys = ["openai_api_key", "qdrant_collection"]
     missing = [key for key in critical_keys if not getattr(settings, key)]
@@ -85,8 +86,8 @@ async def lifespan(app: FastAPI):
         logger.error("missing_required_config", missing=missing)
         # In a real production system, we might want to sys.exit(1) here
         # but for this environment we'll just log loudly.
-    
-    settings.configure_llama_index() # Initialize LlamaIndex models
+
+    settings.configure_llama_index()  # Initialize LlamaIndex models
     logger.info(
         "app_starting",
         qdrant_storage="local_qdrant_storage",
@@ -95,15 +96,16 @@ async def lifespan(app: FastAPI):
 
     # ── Startup: verify Qdrant storage is accessible and auto-ingest if empty ──
     try:
+        from pathlib import Path
+
         from config.qdrant_client import get_qdrant_client
-        from ingestion.loaders import DocumentLoader
         from ingestion.chunking import SemanticChunker
         from ingestion.embedding_pipeline import EmbeddingPipeline
-        from pathlib import Path
+        from ingestion.loaders import DocumentLoader
 
         client = get_qdrant_client()
         collections = [c.name for c in client.get_collections().collections]
-        
+
         should_ingest = False
         if settings.qdrant_collection in collections:
             info = client.get_collection(settings.qdrant_collection)
@@ -122,7 +124,7 @@ async def lifespan(app: FastAPI):
                 loader = DocumentLoader()
                 chunker = SemanticChunker()
                 pipeline = EmbeddingPipeline()
-                
+
                 docs = loader.load_directory(raw_dir)
                 if docs:
                     chunks = chunker.chunk_documents(docs)
@@ -134,6 +136,7 @@ async def lifespan(app: FastAPI):
 
     yield
     logger.info("app_shutting_down")
+
 
 app = FastAPI(
     title="RAG Production System",
@@ -155,25 +158,26 @@ app.add_middleware(
 
 app.include_router(router, prefix="/api/v1")
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     import traceback
+
     error_msg = traceback.format_exc()
     logger.error("global_error", error=str(exc), traceback=error_msg)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal Server Error", "error_type": type(exc).__name__}
-    )
+    return JSONResponse(status_code=500, content={"detail": "Internal Server Error", "error_type": type(exc).__name__})
 
 
 # ── Serve the Chat UI ────────────────────────────────────────
 _static_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "static"))
 app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 
+
 @app.get("/", include_in_schema=False)
 async def chat_ui():
     """Serve the premium chat web UI."""
     return FileResponse(os.path.join(_static_dir, "index.html"))
+
 
 @app.get("/health")
 async def health():
@@ -181,15 +185,13 @@ async def health():
     health_status = {
         "status": "healthy",
         "service": "rag-production-system",
-        "dependencies": {
-            "qdrant": "unknown",
-            "llm_api": "unknown"
-        }
+        "dependencies": {"qdrant": "unknown", "llm_api": "unknown"},
     }
-    
+
     # Check Qdrant
     try:
         from config.qdrant_client import get_qdrant_client
+
         client = get_qdrant_client()
         client.get_collections()
         health_status["dependencies"]["qdrant"] = "online"

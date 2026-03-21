@@ -13,20 +13,23 @@ from config import get_settings
 
 logger = structlog.get_logger(__name__)
 
+
 class QueryRouter:
     """Routes queries to either the RAG pipeline or direct LLM."""
 
     def __init__(self):
         self.settings = get_settings()
-        
+
         # Use Groq or OpenAI for the router LLM
         if self.settings.groq_api_key:
             from groq import Groq
+
             self.client = Groq(api_key=self.settings.groq_api_key)
-            self.model = "llama-3.1-8b-instant" # Fast model for routing
+            self.model = "llama-3.1-8b-instant"  # Fast model for routing
             self._backend = "groq"
         elif self.settings.openai_api_key:
             import openai
+
             self.client = openai.OpenAI(api_key=self.settings.openai_api_key)
             self.model = "gpt-4o-mini"
             self._backend = "openai"
@@ -36,7 +39,7 @@ class QueryRouter:
 
     def route_query(self, query: str) -> Literal["RAG", "CONVERSATIONAL"]:
         """Determine if a query needs retrieval.
-        
+
         Very simple implementation utilizing a fast LLM call.
         """
         if self._backend == "echo":
@@ -63,7 +66,7 @@ Respond with EXACTLY one word: either CONVERSATIONAL or RAG.
                 return "RAG"
             elif "CONVERSATIONAL" in decision:
                 return "CONVERSATIONAL"
-            return "RAG" # Fallback
+            return "RAG"  # Fallback
         except Exception as e:
             logger.error("query_router_error", error=str(e))
-            return "RAG" # Fallback to retrieval on error
+            return "RAG"  # Fallback to retrieval on error

@@ -6,42 +6,43 @@ All endpoints return structured JSON with timing and metadata.
 
 from __future__ import annotations
 
-import time
 import re
+import shutil
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-
 import structlog
-import shutil
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from api.cache_manager import cache_manager as cache
+from api.memory import MemoryManager
 from config import get_settings
 from generation.guardrails import Guardrails
 from generation.prompt_templates import ANALYSIS_SYSTEM_PROMPT
 from generation.response_generator import ResponseGenerator
 from ingestion.chunking import DocumentChunker, SemanticChunker
 from ingestion.embedding_pipeline import EmbeddingPipeline
-from api.memory import MemoryManager
 from ingestion.loaders import DocumentLoader
 from reranking.cohere_rerank import CohereReranker
-from retrieval.hybrid_search import HybridSearcher
-from retrieval.router import QueryRouter
-from retrieval.hyde import HyDEGenerator
 from retrieval.agentic_search import AgenticSearcher
+from retrieval.hybrid_search import HybridSearcher
+from retrieval.hyde import HyDEGenerator
 from retrieval.multi_query import MultiQuerySearcher
-from api.cache_manager import cache_manager as cache
+from retrieval.router import QueryRouter
 
 # Persistent agent instance to avoid re-initializing on every request
 _agent_searcher: Optional[AgenticSearcher] = None
+
 
 def get_agent_searcher():
     global _agent_searcher
     if _agent_searcher is None:
         _agent_searcher = AgenticSearcher()
     return _agent_searcher
+
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -141,29 +142,42 @@ async def query(req: QueryRequest):
         # Context-aware metadata retrieval
         memory = MemoryManager()
         active_filename = None
-        
+
         # 1. Extract filename from query or request filters
         if req.filters and "filename" in req.filters:
             active_filename = req.filters["filename"]
         else:
             # Robust extraction using regex
-            pdf_match = re.search(r'([\w\-. ]+\.pdf)', req.question, re.IGNORECASE)
+            pdf_match = re.search(r"([\w\-. ]+\.pdf)", req.question, re.IGNORECASE)
             if pdf_match:
                 active_filename = pdf_match.group(1).strip()
-        
+
         # 2. Track filename for session
         if active_filename:
             memory.save_last_filename(req.session_id, active_filename)
         else:
             # Try to recover from session history for vague "more details" requests
-            vague_terms = ["bigger description", "more details", "detailed overview", "summarize the file", "about it", "of that file"]
+            vague_terms = [
+                "bigger description",
+                "more details",
+                "detailed overview",
+                "summarize the file",
+                "about it",
+                "of that file",
+            ]
             if any(term in req.question.lower() for term in vague_terms):
                 active_filename = memory.get_last_filename(req.session_id)
 
         # 3. Handle description requests with deep analysis fallback
-        is_generic_desc = any(t in req.question.lower() for t in ["description", "overview", "about the file", "what is in the file", "tell me about"])
-        is_bigger_request = any(t in req.question.lower() for t in ["bigger", "more detail", "detailed breakdown", "exhaustive", "detailed explanation"])
-        
+        is_generic_desc = any(
+            t in req.question.lower()
+            for t in ["description", "overview", "about the file", "what is in the file", "tell me about"]
+        )
+        is_bigger_request = any(
+            t in req.question.lower()
+            for t in ["bigger", "more detail", "detailed breakdown", "exhaustive", "detailed explanation"]
+        )
+
         system_prompt_override = None
 
         if active_filename and is_generic_desc:
@@ -200,7 +214,7 @@ async def query(req: QueryRequest):
         if decision == "RAG":
             # 1. Retrieval (HyDE + Optional Multi-Query)
             search_query = hyde.generate(req.question)
-            
+
             if req.multi_query_enabled:
                 candidates = multi_searcher.search(query=search_query, top_k=req.top_k, filters=search_filters)
             else:
@@ -214,10 +228,7 @@ async def query(req: QueryRequest):
 
         # 3. Generation
         result = generator.generate(
-            query=req.question, 
-            contexts=reranked, 
-            temperature=req.temperature,
-            system_prompt=system_prompt_override
+            query=req.question, contexts=reranked, temperature=req.temperature, system_prompt=system_prompt_override
         )
 
         # 4. Save history
@@ -225,7 +236,7 @@ async def query(req: QueryRequest):
         memory.save_message(req.session_id, "assistant", result.answer)
 
         latency = (time.perf_counter() - start) * 1000
-        
+
         response_data = {
             "answer": result.answer,
             "sources": result.sources,
@@ -258,7 +269,7 @@ async def agent_query(req: QueryRequest):
         logger.info("agent_query_start", question=req.question)
         agent = get_agent_searcher()
         answer = await agent.search(req.question)
-        
+
         latency = (time.perf_counter() - start) * 1000
         logger.info("agent_query_success", latency_ms=latency)
 
@@ -273,6 +284,7 @@ async def agent_query(req: QueryRequest):
 
     except Exception as e:
         import traceback
+
         error_msg = traceback.format_exc()
         logger.error("agent_query_error", error=str(e), traceback=error_msg)
         raise HTTPException(status_code=500, detail=f"Agent Error: {str(e)}\n\n{error_msg}")
@@ -286,9 +298,11 @@ async def chat_stream(req: QueryRequest):
         guardrails = Guardrails()
         is_safe, msg = guardrails.check_query(req.question)
         if not is_safe:
+
             def error_stream():
                 yield f"data: {msg}\n\n"
                 yield "data: [DONE]\n\n"
+
             return StreamingResponse(error_stream(), media_type="text/event-stream")
 
         searcher = _get_hybrid_searcher()
@@ -306,13 +320,14 @@ async def chat_stream(req: QueryRequest):
         active_filename = None
         if req.filters and "filename" in req.filters:
             active_filename = req.filters["filename"]
-        
+
         if not active_filename:
             import re
-            match = re.search(r'([\w\-. ]+\.pdf)', req.question, re.IGNORECASE)
+
+            match = re.search(r"([\w\-. ]+\.pdf)", req.question, re.IGNORECASE)
             if match:
                 active_filename = match.group(1).strip()
-        
+
         if not active_filename:
             active_filename = memory.get_last_filename(req.session_id)
 
@@ -320,9 +335,22 @@ async def chat_stream(req: QueryRequest):
             memory.save_last_filename(req.session_id, active_filename)
 
         # 3. Detect Specialized Requests
-        is_generic_desc = any(t in req.question.lower() for t in ["description", "overview", "what is this", "tell me about", "about the file"])
-        is_analysis_request = any(t in req.question.lower() for t in ["more details", "bigger description", "exhaustive", "technical breakdown", "detailed explanation", "tell me more"])
-        
+        is_generic_desc = any(
+            t in req.question.lower()
+            for t in ["description", "overview", "what is this", "tell me about", "about the file"]
+        )
+        is_analysis_request = any(
+            t in req.question.lower()
+            for t in [
+                "more details",
+                "bigger description",
+                "exhaustive",
+                "technical breakdown",
+                "detailed explanation",
+                "tell me more",
+            ]
+        )
+
         system_prompt_override = None
 
         # 4. Handle Fast-Path for Simple Descriptions
@@ -330,15 +358,17 @@ async def chat_stream(req: QueryRequest):
             metadata = memory.get_document_metadata(active_filename)
             if metadata and metadata.get("short_description"):
                 logger.info("metadata_fast_path", filename=active_filename)
+
                 def meta_stream():
                     yield f"data: {metadata['short_description']}\n\n"
                     yield "data: [DONE]\n\n"
+
                 return StreamingResponse(meta_stream(), media_type="text/event-stream")
 
         # 5. Configure RAG Scope
         search_filters = req.filters or {}
         top_k = req.top_k
-        
+
         if is_analysis_request and active_filename:
             logger.info("deep_analysis_triggered", filename=active_filename)
             top_k = 50
@@ -349,20 +379,22 @@ async def chat_stream(req: QueryRequest):
 
         candidates = []
         reranked = []
-        
+
         if decision == "RAG":
             search_query = hyde.generate(req.question)
-            
+
             multi_searcher = MultiQuerySearcher(searcher)
-            logger.info("retrieval_debug", 
-                        searcher_type=type(searcher).__name__, 
-                        client_type=type(searcher.vector.client).__name__,
-                        has_search=hasattr(searcher.vector.client, 'search'))
+            logger.info(
+                "retrieval_debug",
+                searcher_type=type(searcher).__name__,
+                client_type=type(searcher.vector.client).__name__,
+                has_search=hasattr(searcher.vector.client, "search"),
+            )
             if req.multi_query_enabled:
                 candidates = multi_searcher.search(query=search_query, top_k=top_k, filters=search_filters)
             else:
                 candidates = searcher.search(query=search_query, top_k=top_k, filters=search_filters)
-            
+
             if candidates:
                 reranked = reranker.rerank(req.question, candidates, top_n=req.top_n)
 
@@ -371,18 +403,15 @@ async def chat_stream(req: QueryRequest):
             full_response = []
             try:
                 for chunk in generator.generate_stream(
-                    req.question, 
-                    reranked, 
-                    temperature=req.temperature,
-                    system_prompt=system_prompt_override
+                    req.question, reranked, temperature=req.temperature, system_prompt=system_prompt_override
                 ):
                     full_response.append(chunk)
                     yield f"data: {chunk}\n\n"
-                
+
                 # Save to persistent storage
                 memory.save_message(req.session_id, "user", req.question)
                 memory.save_message(req.session_id, "assistant", "".join(full_response))
-                
+
                 yield "data: [DONE]\n\n"
             except Exception as e:
                 logger.error("sse_error", error=str(e))
@@ -456,7 +485,7 @@ async def upload_file(file: UploadFile = File(...)):
         upload_dir = Path("data/uploads")
         upload_dir.mkdir(parents=True, exist_ok=True)
         file_path = upload_dir / file.filename
-        
+
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
@@ -465,7 +494,7 @@ async def upload_file(file: UploadFile = File(...)):
         documents = loader.load_file(file_path)
         if not documents:
             raise HTTPException(status_code=400, detail="Failed to extract text from PDF.")
-        
+
         full_text = documents[0].text
         generator = ResponseGenerator()
         short_desc = generator.generate_summary(full_text, length="short")
@@ -488,7 +517,7 @@ async def upload_file(file: UploadFile = File(...)):
         chunks = chunker.chunk_documents(documents)
         pipeline.ensure_collection()
         stored = pipeline.ingest(chunks)
-        
+
         # Reset BM25
         global _bm25_built
         _bm25_built = False
@@ -498,7 +527,7 @@ async def upload_file(file: UploadFile = File(...)):
             "filename": file.filename,
             "vectors_stored": stored,
             "short_description": short_desc,
-            "latency_ms": round(latency, 2)
+            "latency_ms": round(latency, 2),
         }
 
     except Exception as e:

@@ -19,16 +19,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="RAG CLI — query your document collection"
-    )
+    parser = argparse.ArgumentParser(description="RAG CLI — query your document collection")
     parser.add_argument("--question", "-q", required=True, help="Question to ask")
-    parser.add_argument(
-        "--top-k", type=int, default=10, help="Number of retrieval candidates (default: 10)"
-    )
-    parser.add_argument(
-        "--top-n", type=int, default=3, help="Top N after reranking (default: 3)"
-    )
+    parser.add_argument("--top-k", type=int, default=10, help="Number of retrieval candidates (default: 10)")
+    parser.add_argument("--top-n", type=int, default=3, help="Top N after reranking (default: 3)")
     parser.add_argument(
         "--no-rerank",
         action="store_true",

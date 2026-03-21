@@ -2,23 +2,26 @@
 Multi-Query Retrieval — expands user queries into multiple variations to improve recall.
 
 This technique is a staple of production RAG systems. It overcomes the limitation of
-single-vector similarity by generating 3-5 semantically different versions of the 
+single-vector similarity by generating 3-5 semantically different versions of the
 original question, retrieving for each, and fusing the results.
 """
 
 from __future__ import annotations
 
 from typing import Dict, List, Optional
+
 import structlog
+
 from config import get_settings
-from retrieval.vector_search import SearchResult
 from retrieval.hybrid_search import HybridSearcher
+from retrieval.vector_search import SearchResult
 
 logger = structlog.get_logger(__name__)
 
+
 class MultiQuerySearcher:
     """Enhance retrieval by generating multiple query variations.
-    
+
     Architecture:
     1. LLM generates 3 variations of the user query.
     2. HybridSearcher executes retrieval for each variation.
@@ -28,14 +31,16 @@ class MultiQuerySearcher:
     def __init__(self, hybrid_searcher: Optional[HybridSearcher] = None):
         self.settings = get_settings()
         self.hybrid = hybrid_searcher or HybridSearcher()
-        
+
         # Setup LLM client for expansion
         if self.settings.groq_api_key:
             from groq import Groq
+
             self.client = Groq(api_key=self.settings.groq_api_key)
             self.model = "llama-3.1-8b-instant"
         elif self.settings.openai_api_key:
             import openai
+
             self.client = openai.OpenAI(api_key=self.settings.openai_api_key)
             self.model = "gpt-4o-mini"
         else:
@@ -60,12 +65,12 @@ Original query: {original_query}"""
                 temperature=0.3,
             )
             queries = [q.strip() for q in response.choices[0].message.content.split("\n") if q.strip()]
-            
+
             # Ensure we always include the original query
             if original_query not in queries:
                 queries.append(original_query)
-                
-            return queries[:count+1]
+
+            return queries[: count + 1]
         except Exception as e:
             logger.error("query_expansion_failed", error=str(e))
             return [original_query]
@@ -91,7 +96,7 @@ Original query: {original_query}"""
     def _multi_list_rrf(self, result_lists: List[List[SearchResult]], top_k: int) -> List[SearchResult]:
         """Fusion for multiple lists of search results."""
         from collections import defaultdict
-        
+
         score_map: Dict[str, float] = defaultdict(float)
         result_map: Dict[str, SearchResult] = {}
         rrf_k = 60
@@ -105,12 +110,8 @@ Original query: {original_query}"""
                     result_map[key] = res
 
         # Sort by fused score
-        final_results = sorted(
-            result_map.values(), 
-            key=lambda r: score_map[r.text[:200]], 
-            reverse=True
-        )
-        
+        final_results = sorted(result_map.values(), key=lambda r: score_map[r.text[:200]], reverse=True)
+
         # Update scores to be the RRF values
         for res in final_results:
             res.score = score_map[res.text[:200]]

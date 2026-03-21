@@ -78,8 +78,8 @@ class BM25Searcher:
 
     # ── Search ────────────────────────────────────────────
     def search(
-        self, 
-        query: str, 
+        self,
+        query: str,
         top_k: Optional[int] = None,
         filters: Optional[Dict] = None,
     ) -> List[SearchResult]:
@@ -99,9 +99,9 @@ class BM25Searcher:
         for idx in ranked_indices:
             if scores[idx] <= 0:
                 continue
-            
+
             payload = self._corpus[idx]
-            
+
             # Simple metadata filtering for in-memory BM25
             if filters:
                 match = True
@@ -120,7 +120,7 @@ class BM25Searcher:
                     source="bm25",
                 )
             )
-            
+
             if len(results) >= top_k:
                 break
 

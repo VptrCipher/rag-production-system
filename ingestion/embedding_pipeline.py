@@ -63,9 +63,7 @@ class EmbeddingPipeline:
     # ── Collection management ─────────────────────────────
     def ensure_collection(self) -> None:
         """Create the Qdrant collection if it does not exist."""
-        collections = [
-            c.name for c in self.client.get_collections().collections
-        ]
+        collections = [c.name for c in self.client.get_collections().collections]
         if self.collection_name not in collections:
             self.client.create_collection(
                 collection_name=self.collection_name,
@@ -101,9 +99,7 @@ class EmbeddingPipeline:
                 **meta,
                 "text": text,
             }
-            points.append(
-                PointStruct(id=point_id, vector=embedding, payload=payload)
-            )
+            points.append(PointStruct(id=point_id, vector=embedding, payload=payload))
 
         # Upsert in batches of 256
         batch_size = 256

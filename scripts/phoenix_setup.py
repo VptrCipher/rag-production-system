@@ -5,6 +5,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPTraceExpor
 from opentelemetry.sdk import trace as sdk_trace
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
+
 def setup_phoenix():
     """Start Phoenix and instrument LlamaIndex."""
     # Launch Phoenix locally
@@ -22,9 +23,11 @@ def setup_phoenix():
     LlamaIndexInstrumentor().instrument()
     print("LlamaIndex instrumentation active.")
 
+
 if __name__ == "__main__":
     setup_phoenix()
     # Keep the script running to maintain the Phoenix session
     import time
+
     while True:
         time.sleep(10)
