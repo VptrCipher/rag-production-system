@@ -20,8 +20,8 @@ jobs:
           # You must add these as Repository Variables in GitHub settings!
         run: |
           if [ -z "$HF_TOKEN" ]; then
-            echo "Error: HF_TOKEN is not set in GitHub Secrets."
-            exit 1
+            echo "Warning: HF_TOKEN is not set in GitHub Secrets. Skipping sync gracefully."
+            exit 0
           fi
           
           # We use the explicit HF username provided
