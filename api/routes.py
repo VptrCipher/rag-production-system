@@ -61,7 +61,7 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str
-    sources: list
+    sources: List[Dict[str, Any]]
     model: str
     retrieval_count: int
     latency_ms: float
@@ -89,6 +89,15 @@ class EvaluateResponse(BaseModel):
     num_samples: int
     passed: bool
     evaluation_time_s: float
+
+
+# Rebuild models for Pydantic v2 forward reference resolution
+QueryRequest.model_rebuild()
+QueryResponse.model_rebuild()
+IngestRequest.model_rebuild()
+IngestResponse.model_rebuild()
+EvaluateRequest.model_rebuild()
+EvaluateResponse.model_rebuild()
 
 
 # ── Shared state ──────────────────────────────────────────
